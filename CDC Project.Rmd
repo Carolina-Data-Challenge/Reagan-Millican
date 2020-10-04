@@ -103,6 +103,13 @@ plot(China_GDP~Year, main="Quadratic Model- China GDP", data=US_ChinaGDP, pch = 
 curve(B0_modelC2 + B1_modelC2*x + B2_modelC2*x^2, add=TRUE)
 ```
 ```{r}
+plot(modelUS2)
+plot(modelChina2)
+```
+
+
+
+```{r}
 year2025<-data.frame(Year=2025)
 
 predict.lm(modelChina2, year2025, interval="prediction", level=0.9)
