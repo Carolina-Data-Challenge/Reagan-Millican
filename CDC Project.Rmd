@@ -1,0 +1,209 @@
+---
+title: "CDC 2020"
+author: "Reagan Millican"
+date: "10/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(readr)
+gdp<-read_csv("econdata2.csv")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+```
+```{r}
+gdp1<-gdp%>%
+  filter(`Subject Descriptor`=="Gross domestic product, current prices")
+  
+write_csv(gdp1, 'econdata2.csv')
+```
+
+```{r}
+gdpChina<-gdp%>%
+  filter(`Subject Descriptor`== "Gross domestic product, current prices")%>%
+  filter(Country=='China')%>%
+  select(c(10:50))
+
+gdpChina2<-gdpChina%>%
+  gather(Year, GDP)%>%
+  mutate(China_GDP=str_replace_all(GDP,",",""))%>%
+  select(Year, China_GDP)%>%
+  mutate_at(1:2,as.numeric)
+
+gdpChina2
+```
+
+```{r}
+gdpUS<-gdp%>%
+  filter(`Subject Descriptor`== "Gross domestic product, current prices")%>%
+  filter(Country=='United States')%>%
+  select(c(10:50))
+
+gdpUS2<-gdpUS%>%
+  gather(Year, GDP)%>%
+  mutate(US_GDP=str_replace_all(GDP,",",""))%>%
+  select(Year, US_GDP)%>%
+  mutate_at(1:2,as.numeric)
+
+gdpUS2
+gdpChina2
+
+US_ChinaGDP=merge(gdpUS2, gdpChina2, by="Year")
+
+US_ChinaGDP
+
+write_csv(US_ChinaGDP, 'USChinaGDP.csv')
+
+```
+
+```{r}
+plot(US_GDP~Year, main="US GDP",data=US_ChinaGDP, pch = 19, col="orange")
+modelUS<-lm(US_GDP~Year, data=US_ChinaGDP)
+summary(modelUS)
+abline(modelUS)
+
+
+plot(China_GDP~Year,main="China GDP", data=US_ChinaGDP, pch = 19, col="purple")
+modelChina<-lm(China_GDP~Year, data=US_ChinaGDP)
+abline(modelChina)
+```
+
+```{r}
+plot(modelUS)
+plot(modelChina)
+```
+
+
+```{r}
+modelUS2<-lm(US_GDP~Year+I(Year^2), data=US_ChinaGDP)
+summary(modelUS2)
+B0_modelUS2= summary(modelUS2)$coef[1,1]
+B1_modelUS2= summary(modelUS2)$coef[2,1]
+B2_modelUS2= summary(modelUS2)$coef[3,1]
+plot(US_GDP~Year, main="Quadratic Model- US GDP", data=US_ChinaGDP, pch = 19, col="orange")
+curve(B0_modelUS2 + B1_modelUS2*x + B2_modelUS2*x^2, add=TRUE)
+
+
+```
+
+```{r}
+modelChina2<-lm(China_GDP~Year+I(Year^2), data=US_ChinaGDP)
+summary(modelChina2)
+B0_modelC2= summary(modelChina2)$coef[1,1]
+B1_modelC2= summary(modelChina2)$coef[2,1]
+B2_modelC2= summary(modelChina2)$coef[3,1]
+plot(China_GDP~Year, main="Quadratic Model- China GDP", data=US_ChinaGDP, pch = 19, col="purple")
+curve(B0_modelC2 + B1_modelC2*x + B2_modelC2*x^2, add=TRUE)
+```
+```{r}
+year2025<-data.frame(Year=2025)
+
+predict.lm(modelChina2, year2025, interval="prediction", level=0.9)
+predict.lm(modelUS2, year2025, interval="prediction", level=0.9)
+
+year2030<-data.frame(Year=2030)
+
+predict.lm(modelChina2, year2030, interval="prediction", level=0.9)
+predict.lm(modelUS2, year2030, interval="prediction", level=0.9)
+
+year2035<-data.frame(Year=2035)
+
+predict.lm(modelChina2, year2035, interval="prediction", level=0.9)
+predict.lm(modelUS2, year2035, interval="prediction", level=0.9)
+
+year2040<-data.frame(Year=2040)
+
+predict.lm(modelChina2, year2040, interval="prediction", level=0.9)
+predict.lm(modelUS2, year2040, interval="prediction", level=0.9)
+
+```
+```{r}
+pred2025<-data.frame('2025', '24829.65', '36936.22')
+names(pred2025)<-c("Year","US_GDP", "China_GDP")
+
+predictUS_ChinaGDP<-rbind(US_ChinaGDP, pred2025)
+
+pred2030<-data.frame('2030', '28503.45', '47644.52')
+names(pred2030)<-c("Year","US_GDP", "China_GDP")
+
+predictUS_ChinaGDP2<-rbind(predictUS_ChinaGDP, pred2030)
+
+pred2035<-data.frame('2035', '32421.58', '59718.24')
+names(pred2035)<-c("Year","US_GDP", "China_GDP")
+
+predictUS_ChinaGDP3<-rbind(predictUS_ChinaGDP2, pred2035)
+
+pred2040<-data.frame('2040', '36584.06', '73157.37')
+names(pred2040)<-c("Year","US_GDP", "China_GDP")
+
+predictUS_ChinaGDP4<-rbind(predictUS_ChinaGDP3, pred2040)
+predictUS_ChinaGDP4
+
+write_csv(predictUS_ChinaGDP4, 'GDPpredict.csv')
+```
+```{r}
+#India, Japan, Germany
+gdpIndia<-gdp%>%
+  filter(`Subject Descriptor`== "Gross domestic product, current prices")%>%
+  filter(Country=='India')%>%
+  select(c(10:50))
+gdpIndia
+
+gdpIndia2<-gdpIndia%>%
+  gather(Year, GDP)%>%
+  mutate(India_GDP=str_replace_all(GDP,",",""))%>%
+  select(Year, India_GDP)%>%
+  mutate_at(1:2,as.numeric)
+gdpIndia2
+
+gdpJapan<-gdp%>%
+  filter(`Subject Descriptor`== "Gross domestic product, current prices")%>%
+  filter(Country=='Japan')%>%
+  select(c(10:50))
+
+gdpJapan2<-gdpJapan%>%
+  gather(Year, GDP)%>%
+  mutate(Japan_GDP=str_replace_all(GDP,",",""))%>%
+  select(Year, Japan_GDP)%>%
+  mutate_at(1:2,as.numeric)
+
+gdpGermany<-gdp%>%
+  filter(`Subject Descriptor`== "Gross domestic product, current prices")%>%
+  filter(Country=='Germany')%>%
+  select(c(10:50))
+
+gdpGermany2<-gdpGermany%>%
+  gather(Year, GDP)%>%
+  mutate(Germany_GDP=str_replace_all(GDP,",",""))%>%
+  select(Year, Germany_GDP)%>%
+  mutate_at(1:2,as.numeric)
+
+CountryComparison=merge(gdpUS2, gdpChina2, by="Year")
+CountryComparison2=merge(CountryComparison, gdpIndia2, by="Year")
+CountryComparison3=merge(CountryComparison2, gdpJapan2, by="Year")
+CountryComparison3
+CountryComparison4=merge(CountryComparison3, gdpGermany2, by="Year")
+CountryComparison4
+
+write_csv(CountryComparison4, '5CountryComparison.csv')
+```
+```{r}
+plot(Japan_GDP~Year, data=CountryComparison4)
+plot(India_GDP~Year, data=CountryComparison4)
+plot(Germany_GDP~Year, data=CountryComparison4)
+```
+```{r}
+plot(India_GDP~Year, data=CountryComparison4)
+curve(B0_modelUS2 + B1_modelUS2*x + B2_modelUS2*x^2, add=TRUE)
+
+curve(B0_modelC2 + B1_modelC2*x + B2_modelC2*x^2, add=TRUE)
+```
+
+
